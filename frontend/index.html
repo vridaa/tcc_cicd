@@ -77,21 +77,13 @@
             <button type="submit">Add Note</button>
             <button type="button" onclick="updateCatatan()">Update Note</button>
         </form>
+
         <h2>Daftar Catatan</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Content</th>
-                    <th>Category</th>
-                    <th>Tindakan</th>
-                </tr>
-            </thead>
-            <tbody id="catatan-list"></tbody>
-        </table>
+        <div id="catatan-by-category"></div>
     </div>
+
     <script>
-        const BASE_URL = "https://notes-be082-749281711221.us-central1.run.app/"; // Sesuaikan dengan backend
+        const BASE_URL = "https://notes-be082-749281711221.us-central1.run.app/";
 
         document.getElementById("catatan-form").addEventListener("submit", async function(event) {
             event.preventDefault();
@@ -113,20 +105,35 @@
         async function getCatatan() {
             const response = await fetch(`${BASE_URL}/notes`);
             const data = await response.json();
-            const list = document.getElementById("catatan-list");
-            list.innerHTML = "";
-            data.forEach(note => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${note.title}</td>
-                    <td>${note.content}</td>
-                    <td>${note.category}</td>
-                    <td>
-                        <button onclick="editCatatan(${note.id})">Edit</button>
-                        <button onclick="deleteCatatan(${note.id})">Delete</button>
-                    </td>
-                `;
-                list.appendChild(row);
+            renderNotesByCategory(data);
+        }
+
+        function renderNotesByCategory(data) {
+            const container = document.getElementById("catatan-by-category");
+            container.innerHTML = "";
+
+            const categories = ["tugas", "hutang", "kerja", "penting", "lainnya"];
+            categories.forEach(cat => {
+                const notes = data.filter(note => note.category === cat);
+                if (notes.length > 0) {
+                    const section = document.createElement("div");
+                    section.innerHTML = `<h3>${cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>`;
+                    notes.forEach(note => {
+                        const noteDiv = document.createElement("div");
+                        noteDiv.style.border = "1px solid #ccc";
+                        noteDiv.style.padding = "10px";
+                        noteDiv.style.margin = "5px 0";
+                        noteDiv.style.borderRadius = "6px";
+                        noteDiv.innerHTML = `
+                            <strong>${note.title}</strong><br>
+                            <em>${note.content}</em><br>
+                            <button onclick="editCatatan(${note.id})">Edit</button>
+                            <button onclick="deleteCatatan(${note.id})">Delete</button>
+                        `;
+                        section.appendChild(noteDiv);
+                    });
+                    container.appendChild(section);
+                }
             });
         }
 
