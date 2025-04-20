@@ -1,0 +1,24 @@
+GET http://localhost:4000/notes
+
+###
+POST http://localhost:4000/add-notes
+Content-Type: application/json
+
+{
+    "title": "Ayam",
+    "content": "20000",
+    "category" : "hutang"
+}
+
+###
+PUT http://localhost:4000/edit-notes/11
+Content-Type: application/json
+
+{
+  "title": "BEBEK",
+  "content": "AKU INGIN MENJADI DUYUNG PLIS",
+  "category" : "khayalan"
+}
+
+###
+DELETE http://localhost:4000/delete-notes/3

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Catatan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffebf0;
+            text-align: center;
+        }
+        .container {
+            background-color: #ffe0eb;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #d63384; }
+        .form-group { margin-bottom: 15px; }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #ff66a3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover { background-color: #ff3385; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th { background-color: #ffccd5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aplikasi Catatan</h1>
+        <div id="status"></div>
+        <form id="catatan-form">
+            <input type="hidden" id="catatan-id">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" required>
+            </div>
+            <div class="form-group">
+                <label for="content">Content:</label>
+                <textarea id="content" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category" required>
+                    <option value="tugas">Tugas</option>
+                    <option value="hutang">Hutang</option>
+                    <option value="kerja">Kerja</option>
+                    <option value="penting">Penting</option>
+                    <option value="lainnya">Lainnya</option>
+                </select>
+            </div>
+            <button type="submit">Add Note</button>
+            <button type="button" onclick="updateCatatan()">Update Note</button>
+        </form>
+        <h2>Daftar Catatan</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Content</th>
+                    <th>Category</th>
+                    <th>Tindakan</th>
+                </tr>
+            </thead>
+            <tbody id="catatan-list"></tbody>
+        </table>
+    </div>
+    <script>
+        const BASE_URL = "http://localhost:4000"; // Sesuaikan dengan backend
+
+        document.getElementById("catatan-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const title = document.getElementById("title").value.trim();
+            const content = document.getElementById("content").value.trim();
+            const category = document.getElementById("category").value;
+            if (!title || !content) return alert("Judul dan konten wajib diisi!");
+
+            await fetch(`${BASE_URL}/add-notes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, content, category })
+            });
+
+            document.getElementById("catatan-form").reset();
+            getCatatan();
+        });
+
+        async function getCatatan() {
+            const response = await fetch(`${BASE_URL}/notes`);
+            const data = await response.json();
+            const list = document.getElementById("catatan-list");
+            list.innerHTML = "";
+            data.forEach(note => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${note.title}</td>
+                    <td>${note.content}</td>
+                    <td>${note.category}</td>
+                    <td>
+                        <button onclick="editCatatan(${note.id})">Edit</button>
+                        <button onclick="deleteCatatan(${note.id})">Delete</button>
+                    </td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function deleteCatatan(id) {
+            if (!confirm("Yakin ingin menghapus catatan ini?")) return;
+            await fetch(`${BASE_URL}/delete-notes/${id}`, { method: "DELETE" });
+            getCatatan();
+        }
+
+        function editCatatan(id) {
+            fetch(`${BASE_URL}/notes/${id}`)
+                .then(response => response.json())
+                .then(note => {
+                    document.getElementById("catatan-id").value = note.id;
+                    document.getElementById("title").value = note.title;
+                    document.getElementById("content").value = note.content;
+                    document.getElementById("category").value = note.category;
+                });
+        }
+
+        async function updateCatatan() {
+            const id = document.getElementById("catatan-id").value;
+            const title = document.getElementById("title").value.trim();
+            const content = document.getElementById("content").value.trim();
+            const category = document.getElementById("category").value;
+
+            if (!id || !title || !content) return alert("Semua field wajib diisi!");
+
+            await fetch(`${BASE_URL}/edit-notes/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, content, category })
+            });
+
+            document.getElementById("catatan-form").reset();
+            getCatatan();
+        }
+
+        window.onload = getCatatan;
+    </script>
+</body>
+</html>
