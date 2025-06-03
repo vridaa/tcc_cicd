@@ -29,7 +29,7 @@ POST http://localhost:4000/api/auth/signup
 Content-Type: application/json
 
 {
-    "username": "bimble",
+    "username": "bebek",
     "password": "migyu"
 }
 
@@ -39,15 +39,14 @@ POST http://localhost:4000/api/auth/login
 Content-Type: application/json
 
 {
-    "username": "bisayuk",
+    "username": "bebek",
     "password": "migyu"
 }
 
 ###
 # Get Notes (Protected Route)
 GET http://localhost:4000/notes
-x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhdCI6MTc0ODk3NjM5MSwiZXhwIjoxNzQ4OTc5OTkxfQ.uidaMmbNHV3N4pnTcOXPhC_BSHZNPNYyLPJZBT-iffI
-
+x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTg1NDM5LCJleHAiOjE3NDg5ODYzMzl9.6URHZYe7XEAwmqlI_oM-PzSZ8EyKSyTZB3UCscdi_Io
 ###
 # Create Note (Protected Route)
 POST http://localhost:4000/add-notes
@@ -63,8 +62,7 @@ x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhd
 ###
 # Get Note By ID (Protected Route)
 GET http://localhost:4000/notes/1
-x-auth-token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhdCI6MTc0ODk3NjM5MSwiZXhwIjoxNzQ4OTc5OTkxfQ.uidaMmbNHV3N4pnTcOXPhC_BSHZNPNYyLPJZBT-iffI
-
+x-auth-token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTg1NDM5LCJleHAiOjE3NDg5ODYzMzl9.6URHZYe7XEAwmqlI_oM-PzSZ8EyKSyTZB3UCscdi_Io
 
 ###
 # Update Note (Protected Route)

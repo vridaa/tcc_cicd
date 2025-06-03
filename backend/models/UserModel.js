@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 import db from "../config/database.js";
 import bcrypt from "bcryptjs";
+// import Notes from "./NotesModel.js"; // This import is not needed here
 
 const { DataTypes } = Sequelize;
 
@@ -15,6 +16,10 @@ const User = db.define(
         password: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        refreshToken: {
+            type: DataTypes.STRING, // New column for refresh token (hashed)
+            allowNull: true, // Can be null if no refresh token is issued or it's revoked
         },
     },
     {

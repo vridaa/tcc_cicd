@@ -1,4 +1,4 @@
-const BASE_URL = "https://notes-be082-749281711221.us-central1.run.app";
+const BASE_URL = 'http://localhost:4000'; // Ensure this is your backend URL
 
 const authSection = document.getElementById('auth-section');
 const notesSection = document.getElementById('notes-section');
@@ -17,84 +17,298 @@ function showStatus(message, isError = false) {
     setTimeout(() => { statusDiv.textContent = ''; }, 3000);
 }
 
-function setAuthToken(token) {
+// Function to save token (access token now)
+const saveToken = (token) => {
     localStorage.setItem('jwtToken', token);
-    checkAuthStatus();
-}
+};
 
-function getAuthToken() {
+// Function to get token (access token now)
+const getToken = () => {
     return localStorage.getItem('jwtToken');
-}
+};
 
-function removeAuthToken() {
+// Function to remove token
+const removeToken = () => {
     localStorage.removeItem('jwtToken');
-    checkAuthStatus();
-}
+};
 
-async function handleSignup(event) {
-    event.preventDefault();
-    const username = document.getElementById('signup-username').value;
-    const password = document.getElementById('signup-password').value;
+// Function to refresh access token
+const refreshAccessToken = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // Refresh token is sent automatically via cookie
+        });
 
+        if (!response.ok) {
+            // If refresh fails, log out the user
+            await logoutUser();
+            throw new Error('Failed to refresh access token');
+        }
+
+        const data = await response.json();
+        saveToken(data.token); // Save new access token
+        return data.token;
+    } catch (error) {
+        console.error('Error refreshing access token:', error);
+        return null;
+    }
+};
+
+// Generic fetch function with authentication and token refresh logic
+const fetchWithAuth = async (url, options = {}) => {
+    let token = getToken();
+
+    if (token) {
+        options.headers = {
+            ...options.headers,
+            'x-auth-token': token
+        };
+    }
+
+    let response = await fetch(url, options);
+
+    // If access token is expired (401), try to refresh it
+    if (response.status === 401) {
+        const newAccessToken = await refreshAccessToken();
+        if (newAccessToken) {
+            options.headers['x-auth-token'] = newAccessToken;
+            response = await fetch(url, options); // Retry the original request with the new token
+        } else {
+            // If refresh failed, ensure user is logged out and redirect to login
+            await logoutUser();
+            return response; // Return the 401 response
+        }
+    }
+
+    return response;
+};
+
+async function signupUser(username, password) {
     try {
         const response = await fetch(`${BASE_URL}/api/auth/signup`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ username, password })
         });
+
         const data = await response.json();
 
-        if (response.ok) {
-            setAuthToken(data.token);
-            showStatus('Pendaftaran berhasil!');
-        } else {
-            showStatus(data.msg || 'Pendaftaran gagal.', true);
+        if (!response.ok) {
+            throw new Error(data.msg || 'Signup failed');
         }
+
+        saveToken(data.token); // Save the access token
+        checkAuthAndRender();
+        alert('Signup successful!');
+
     } catch (error) {
         console.error('Error during signup:', error);
-        showStatus('Terjadi kesalahan saat mendaftar.', true);
+        alert(error.message);
     }
 }
 
-async function handleLogin(event) {
-    event.preventDefault();
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
-
+// Login User
+const loginUser = async (username, password) => {
     try {
         const response = await fetch(`${BASE_URL}/api/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ username, password })
         });
+
         const data = await response.json();
 
-        if (response.ok) {
-            setAuthToken(data.token);
-            showStatus('Login berhasil!');
-        } else {
-            showStatus(data.msg || 'Login gagal.', true);
+        if (!response.ok) {
+            throw new Error(data.msg || 'Login failed');
         }
+
+        saveToken(data.token); // Save the access token
+        checkAuthAndRender();
+        alert('Login successful!');
+
     } catch (error) {
         console.error('Error during login:', error);
-        showStatus('Terjadi kesalahan saat login.', true);
+        alert(error.message);
     }
-}
+};
 
-function handleLogout() {
-    removeAuthToken();
-    showStatus('Anda telah logout.');
-}
+// Logout User
+const logoutUser = async () => {
+    try {
+        // Invalidate refresh token on the server
+        await fetch(`${BASE_URL}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // Refresh token cookie will be sent automatically
+        });
+
+        removeToken(); // Remove access token from local storage
+        checkAuthAndRender();
+        alert('Logged out successfully!');
+    } catch (error) {
+        console.error('Error during logout:', error);
+        alert('Logout failed, but token cleared locally.');
+        removeToken(); // Ensure token is cleared locally even if server logout fails
+        checkAuthAndRender();
+    }
+};
 
 function checkAuthStatus() {
-    const token = getAuthToken();
+    const token = getToken();
     if (token) {
         authSection.style.display = 'none';
         notesSection.style.display = 'block';
-        getCatatan(); // Load notes if logged in
+        document.getElementById('logout-button').style.display = 'block';
+        getCatatan(); // Load notes if authenticated
     } else {
         authSection.style.display = 'block';
         notesSection.style.display = 'none';
+        document.getElementById('logout-button').style.display = 'none';
+        notesList.innerHTML = ''; // Clear notes if not authenticated
+    }
+}
+
+// Add Catatan
+async function addCatatan(event) {
+    event.preventDefault();
+    const title = document.getElementById('note-title').value;
+    const content = document.getElementById('note-content').value;
+
+    if (!title || !content) return alert("Judul dan konten wajib diisi!");
+
+    try {
+        const response = await fetchWithAuth(`${BASE_URL}/api/notes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title, content })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.msg || 'Failed to add note');
+        }
+
+        alert('Catatan berhasil ditambahkan!');
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-content').value = '';
+        getCatatan();
+    } catch (error) {
+        console.error('Error adding note:', error);
+        alert(error.message);
+    }
+}
+
+// Get Catatan
+async function getCatatan() {
+    try {
+        const response = await fetchWithAuth(`${BASE_URL}/api/notes`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.msg || 'Failed to fetch notes');
+        }
+
+        notesList.innerHTML = ''; // Clear current notes
+        data.forEach(note => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <h3>${note.title}</h3>
+                <p>${note.content}</p>
+                <button onclick="editCatatan(${note.id})">Edit</button>
+                <button onclick="deleteCatatan(${note.id})">Delete</button>
+            `;
+            notesList.appendChild(li);
+        });
+    } catch (error) {
+        console.error('Error fetching notes:', error);
+        alert(error.message);
+    }
+}
+
+// Delete Catatan
+async function deleteCatatan(id) {
+    if (!confirm("Yakin ingin menghapus catatan ini?")) return;
+
+    try {
+        const response = await fetchWithAuth(`${BASE_URL}/api/notes/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.msg || 'Failed to delete note');
+        }
+
+        alert('Catatan berhasil dihapus!');
+        getCatatan();
+    } catch (error) {
+        console.error('Error deleting note:', error);
+        alert(error.message);
+    }
+}
+
+// Edit Catatan (Populate form)
+async function editCatatan(id) {
+    try {
+        const response = await fetchWithAuth(`${BASE_URL}/api/notes/${id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.msg || 'Failed to fetch note for editing');
+        }
+
+        document.getElementById('edit-note-id').value = data.id;
+        document.getElementById('edit-note-title').value = data.title;
+        document.getElementById('edit-note-content').value = data.content;
+        document.getElementById('edit-note-modal').style.display = 'block';
+    } catch (error) {
+        console.error('Error fetching note for editing:', error);
+        alert(error.message);
+    }
+}
+
+// Update Catatan (Submit form)
+async function updateCatatan() {
+    const id = document.getElementById('edit-note-id').value;
+    const title = document.getElementById('edit-note-title').value;
+    const content = document.getElementById('edit-note-content').value;
+
+    if (!id || !title || !content) return alert("Semua field wajib diisi!");
+
+    try {
+        const response = await fetchWithAuth(`${BASE_URL}/api/notes/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title, content })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.msg || 'Failed to update note');
+        }
+
+        alert('Catatan berhasil diperbarui!');
+        document.getElementById('edit-note-modal').style.display = 'none';
+        getCatatan();
+    } catch (error) {
+        console.error('Error updating note:', error);
+        alert(error.message);
     }
 }
 
@@ -111,148 +325,28 @@ showLoginLink.addEventListener('click', (e) => {
     loginFormContainer.style.display = 'block';
 });
 
-loginForm.addEventListener('submit', handleLogin);
-signupForm.addEventListener('submit', handleSignup);
-logoutButton.addEventListener('click', handleLogout);
-
-// Modify existing notes functions to include JWT token
-document.getElementById("catatan-form").addEventListener("submit", async function(event) {
+document.getElementById('signup-form').addEventListener('submit', async (event) => {
     event.preventDefault();
-    const title = document.getElementById("title").value.trim();
-    const content = document.getElementById("content").value.trim();
-    const category = document.getElementById("category").value;
-    if (!title || !content) return showStatus("Judul dan konten wajib diisi!", true);
-
-    const token = getAuthToken();
-    if (!token) { showStatus("Anda harus login untuk menambah catatan!", true); return; }
-
-    await fetch(`${BASE_URL}/add-notes`, {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "x-auth-token": token
-        },
-        body: JSON.stringify({ title, content, category })
-    });
-
-    document.getElementById("catatan-form").reset();
-    getCatatan();
+    const username = document.getElementById('signup-username').value;
+    const password = document.getElementById('signup-password').value;
+    await signupUser(username, password);
 });
 
-async function getCatatan() {
-    const token = getAuthToken();
-    if (!token) { 
-        showStatus("Anda harus login untuk melihat catatan!", true);
-        renderNotesByCategory([]); // Clear notes if not logged in
-        return;
-    }
+document.getElementById('login-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    await loginUser(username, password);
+});
 
-    try {
-        const response = await fetch(`${BASE_URL}/notes`, {
-            headers: { "x-auth-token": token }
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.msg || 'Gagal mengambil catatan.');
-        }
-        renderNotesByCategory(data);
-    } catch (error) {
-        console.error('Error fetching notes:', error);
-        showStatus(error.message || 'Terjadi kesalahan saat mengambil catatan.', true);
-        removeAuthToken(); // Token might be invalid, force logout
-    }
-}
+document.getElementById('logout-button').addEventListener('click', logoutUser);
+document.getElementById('add-note-form').addEventListener('submit', addCatatan);
+document.getElementById('cancel-edit').addEventListener('click', () => {
+    document.getElementById('edit-note-modal').style.display = 'none';
+});
 
-function renderNotesByCategory(data) {
-    const container = document.getElementById("catatan-by-category");
-    container.innerHTML = "";
-
-    const categories = ["tugas", "hutang", "kerja", "penting", "lainnya"];
-    categories.forEach(cat => {
-        const notes = data.filter(note => note.category === cat);
-        if (notes.length > 0) {
-            const section = document.createElement("div");
-            section.innerHTML = `<h3>${cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>`;
-            notes.forEach(note => {
-                const noteDiv = document.createElement("div");
-                noteDiv.style.border = "1px solid #ccc";
-                noteDiv.style.padding = "10px";
-                noteDiv.style.margin = "5px 0";
-                noteDiv.style.borderRadius = "6px";
-                noteDiv.innerHTML = `
-                    <strong>${note.title}</strong><br>
-                    <em>${note.content}</em><br>
-                    <button onclick="editCatatan(${note.id})">Edit</button>
-                    <button onclick="deleteCatatan(${note.id})">Delete</button>
-                `;
-                section.appendChild(noteDiv);
-            });
-            container.appendChild(section);
-        }
-    });
-}
-
-async function deleteCatatan(id) {
-    if (!confirm("Yakin ingin menghapus catatan ini?")) return;
-
-    const token = getAuthToken();
-    if (!token) { showStatus("Anda harus login untuk menghapus catatan!", true); return; }
-
-    await fetch(`${BASE_URL}/delete-notes/${id}`, {
-        method: "DELETE",
-        headers: { "x-auth-token": token }
-    });
+// Initial check on page load
+const checkAuthAndRender = () => {
+    checkAuthStatus();
     getCatatan();
-}
-
-function editCatatan(id) {
-    const token = getAuthToken();
-    if (!token) { showStatus("Anda harus login untuk mengedit catatan!", true); return; }
-
-    fetch(`${BASE_URL}/notes/${id}`, {
-        headers: { "x-auth-token": token }
-    })
-        .then(response => response.json())
-        .then(note => {
-            document.getElementById("catatan-id").value = note.id;
-            document.getElementById("title").value = note.title;
-            document.getElementById("content").value = note.content;
-            document.getElementById("category").value = note.category;
-        })
-        .catch(error => {
-            console.error('Error fetching note for edit:', error);
-            showStatus('Terjadi kesalahan saat mengambil catatan untuk diedit.', true);
-        });
-}
-
-async function updateCatatan() {
-    const id = document.getElementById("catatan-id").value;
-    const title = document.getElementById("title").value.trim();
-    const content = document.getElementById("content").value.trim();
-    const category = document.getElementById("category").value;
-
-    if (!id || !title || !content) return showStatus("Semua field wajib diisi!", true);
-
-    const token = getAuthToken();
-    if (!token) { showStatus("Anda harus login untuk memperbarui catatan!", true); return; }
-
-    await fetch(`${BASE_URL}/edit-notes/${id}`, {
-        method: "PUT",
-        headers: { 
-            "Content-Type": "application/json",
-            "x-auth-token": token
-        },
-        body: JSON.stringify({ title, content, category })
-    });
-
-    document.getElementById("catatan-form").reset();
-    getCatatan();
-}
-
-// Initial check when the page loads
-window.onload = checkAuthStatus;
-
-// Expose functions to global scope if they are used in onclick attributes in index.html
-window.editCatatan = editCatatan;
-window.deleteCatatan = deleteCatatan;
-window.updateCatatan = updateCatatan; 
+}; 
