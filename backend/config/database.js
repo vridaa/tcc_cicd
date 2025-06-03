@@ -1,8 +1,16 @@
 import { Sequelize } from "sequelize";
+import dotenv from 'dotenv';
 
-const db = new Sequelize("notes-rani-db", "root", "rani123", {
-    host: "34.121.186.109",
-    dialect: "mysql"
-})
+dotenv.config(); // Load environment variables
+
+const db = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+        host: process.env.DB_HOST,
+        dialect: "mysql"
+    }
+);
 
 export default db;
