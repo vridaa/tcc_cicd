@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = "https://notes-be082-749281711221.us-central1.run.app";
 
 const authSection = document.getElementById('auth-section');
 const notesSection = document.getElementById('notes-section');
