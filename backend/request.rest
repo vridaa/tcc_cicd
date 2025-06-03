@@ -29,7 +29,7 @@ POST http://localhost:4000/api/auth/signup
 Content-Type: application/json
 
 {
-    "username": "bisayuk",
+    "username": "bimble",
     "password": "migyu"
 }
 
@@ -46,32 +46,31 @@ Content-Type: application/json
 ###
 # Get Notes (Protected Route)
 GET http://localhost:4000/notes
-x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTYyNzg2LCJleHAiOjE3NDg5NjYzODZ9.97I1LTYhCx6Iv0Y-qwoMWQPqYwdN8DOGEVL3eWTly14
+x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhdCI6MTc0ODk3NjM5MSwiZXhwIjoxNzQ4OTc5OTkxfQ.uidaMmbNHV3N4pnTcOXPhC_BSHZNPNYyLPJZBT-iffI
 
 ###
 # Create Note (Protected Route)
 POST http://localhost:4000/add-notes
 Content-Type: application/json
-x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTYyNzg2LCJleHAiOjE3NDg5NjYzODZ9.97I1LTYhCx6Iv0Y-qwoMWQPqYwdN8DOGEVL3eWTly14
-
+x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhdCI6MTc0ODk3NjM5MSwiZXhwIjoxNzQ4OTc5OTkxfQ.uidaMmbNHV3N4pnTcOXPhC_BSHZNPNYyLPJZBT-iffI
 
 {
-    "title": "My Secured Note",
+    "title": "My first",
     "content": "This note is created by an authenticated user.",
     "category" : "private"
 }
 
 ###
 # Get Note By ID (Protected Route)
-GET http://localhost:4000/notes/21
-x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTYyNzg2LCJleHAiOjE3NDg5NjYzODZ9.97I1LTYhCx6Iv0Y-qwoMWQPqYwdN8DOGEVL3eWTly14
+GET http://localhost:4000/notes/1
+x-auth-token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhdCI6MTc0ODk3NjM5MSwiZXhwIjoxNzQ4OTc5OTkxfQ.uidaMmbNHV3N4pnTcOXPhC_BSHZNPNYyLPJZBT-iffI
 
 
 ###
 # Update Note (Protected Route)
-PUT http://localhost:4000/edit-notes/21
+PUT http://localhost:4000/edit-notes/1
 Content-Type: application/json
-x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTYyNzg2LCJleHAiOjE3NDg5NjYzODZ9.97I1LTYhCx6Iv0Y-qwoMWQPqYwdN8DOGEVL3eWTly14
+x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxMX0sImlhdCI6MTc0ODk3NjM5MSwiZXhwIjoxNzQ4OTc5OTkxfQ.uidaMmbNHV3N4pnTcOXPhC_BSHZNPNYyLPJZBT-iffI
 
 
 {
@@ -82,5 +81,5 @@ x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0I
 
 ###
 # Delete Note (Protected Route)
-DELETE http://localhost:4000/delete-notes/21
+DELETE http://localhost:4000/delete-notes/1
 x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxfSwiaWF0IjoxNzQ4OTYyNzg2LCJleHAiOjE3NDg5NjYzODZ9.97I1LTYhCx6Iv0Y-qwoMWQPqYwdN8DOGEVL3eWTly14
