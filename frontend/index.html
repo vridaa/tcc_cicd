@@ -18,8 +18,10 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px; /* Added margin for spacing */
         }
         h1 { color: #0066cc; }
+        h2 { color: #0066cc; }
         .form-group { margin-bottom: 15px; }
         input, textarea, select {
             width: 100%;
@@ -48,131 +50,96 @@
             border-bottom: 1px solid #ddd;
         }
         th { background-color: #99c2ff; }
+        #auth-section {
+            background-color: #e0f2f7;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        #notes-section {
+            display: none; /* Hidden by default until logged in */
+        }
+        #logout-button {
+            background-color: #ff3333;
+        }
+        #logout-button:hover {
+            background-color: #cc0000;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Aplikasi Catatan</h1>
         <div id="status"></div>
-        <form id="catatan-form">
-            <input type="hidden" id="catatan-id">
-            <div class="form-group">
-                <label for="title">Title:</label>
-                <input type="text" id="title" required>
-            </div>
-            <div class="form-group">
-                <label for="content">Content:</label>
-                <textarea id="content" required></textarea>
-            </div>
-            <div class="form-group">
-                <label for="category">Category:</label>
-                <select id="category" required>
-                    <option value="tugas">Tugas</option>
-                    <option value="hutang">Hutang</option>
-                    <option value="kerja">Kerja</option>
-                    <option value="penting">Penting</option>
-                    <option value="lainnya">Lainnya</option>
-                </select>
-            </div>
-            <button type="submit">Add Note</button>
-            <button type="button" onclick="updateCatatan()">Update Note</button>
-        </form>
 
-        <h2>Daftar Catatan</h2>
-        <div id="catatan-by-category"></div>
+        <div id="auth-section">
+            <h2>Login / Daftar</h2>
+            <div id="login-form-container">
+                <h3>Login</h3>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-username">Username:</label>
+                        <input type="text" id="login-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password:</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Belum punya akun? <a href="#" id="show-signup">Daftar di sini</a></p>
+            </div>
+
+            <div id="signup-form-container" style="display: none;">
+                <h3>Daftar Akun Baru</h3>
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="signup-username">Username:</label>
+                        <input type="text" id="signup-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password:</label>
+                        <input type="password" id="signup-password" required>
+                    </div>
+                    <button type="submit">Daftar</button>
+                </form>
+                <p>Sudah punya akun? <a href="#" id="show-login">Login di sini</a></p>
+            </div>
+        </div>
+
+        <div id="notes-section">
+            <button id="logout-button">Logout</button>
+            <h2>Kelola Catatan</h2>
+            <form id="catatan-form">
+                <input type="hidden" id="catatan-id">
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="content">Content:</label>
+                    <textarea id="content" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category:</label>
+                    <select id="category" required>
+                        <option value="tugas">Tugas</option>
+                        <option value="hutang">Hutang</option>
+                        <option value="kerja">Kerja</option>
+                        <option value="penting">Penting</option>
+                        <option value="lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <button type="submit">Add Note</button>
+                <button type="button" onclick="updateCatatan()">Update Note</button>
+            </form>
+
+            <h2>Daftar Catatan</h2>
+            <div id="catatan-by-category"></div>
+        </div>
     </div>
 
-    <script>
-        const BASE_URL = "https://notes-be082-749281711221.us-central1.run.app/";
-
-        document.getElementById("catatan-form").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const title = document.getElementById("title").value.trim();
-            const content = document.getElementById("content").value.trim();
-            const category = document.getElementById("category").value;
-            if (!title || !content) return alert("Judul dan konten wajib diisi!");
-
-            await fetch(`${BASE_URL}/add-notes`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content, category })
-            });
-
-            document.getElementById("catatan-form").reset();
-            getCatatan();
-        });
-
-        async function getCatatan() {
-            const response = await fetch(`${BASE_URL}/notes`);
-            const data = await response.json();
-            renderNotesByCategory(data);
-        }
-
-        function renderNotesByCategory(data) {
-            const container = document.getElementById("catatan-by-category");
-            container.innerHTML = "";
-
-            const categories = ["tugas", "hutang", "kerja", "penting", "lainnya"];
-            categories.forEach(cat => {
-                const notes = data.filter(note => note.category === cat);
-                if (notes.length > 0) {
-                    const section = document.createElement("div");
-                    section.innerHTML = `<h3>${cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>`;
-                    notes.forEach(note => {
-                        const noteDiv = document.createElement("div");
-                        noteDiv.style.border = "1px solid #ccc";
-                        noteDiv.style.padding = "10px";
-                        noteDiv.style.margin = "5px 0";
-                        noteDiv.style.borderRadius = "6px";
-                        noteDiv.innerHTML = `
-                            <strong>${note.title}</strong><br>
-                            <em>${note.content}</em><br>
-                            <button onclick="editCatatan(${note.id})">Edit</button>
-                            <button onclick="deleteCatatan(${note.id})">Delete</button>
-                        `;
-                        section.appendChild(noteDiv);
-                    });
-                    container.appendChild(section);
-                }
-            });
-        }
-
-        async function deleteCatatan(id) {
-            if (!confirm("Yakin ingin menghapus catatan ini?")) return;
-            await fetch(`${BASE_URL}/delete-notes/${id}`, { method: "DELETE" });
-            getCatatan();
-        }
-
-        function editCatatan(id) {
-            fetch(`${BASE_URL}/notes/${id}`)
-                .then(response => response.json())
-                .then(note => {
-                    document.getElementById("catatan-id").value = note.id;
-                    document.getElementById("title").value = note.title;
-                    document.getElementById("content").value = note.content;
-                    document.getElementById("category").value = note.category;
-                });
-        }
-
-        async function updateCatatan() {
-            const id = document.getElementById("catatan-id").value;
-            const title = document.getElementById("title").value.trim();
-            const content = document.getElementById("content").value.trim();
-            const category = document.getElementById("category").value;
-
-            if (!id || !title || !content) return alert("Semua field wajib diisi!");
-
-            await fetch(`${BASE_URL}/edit-notes/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content, category })
-            });
-
-            document.getElementById("catatan-form").reset();
-            getCatatan();
-        }
-
-        window.onload = getCatatan;
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
